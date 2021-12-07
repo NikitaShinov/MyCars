@@ -13,6 +13,13 @@ class ViewController: UIViewController {
     
     var context: NSManagedObjectContext!
     
+    lazy var dateFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.dateStyle = .short
+        df.timeStyle = .none
+        return df
+    }()
+    
     @IBOutlet weak var segmentedControl: UISegmentedControl!
     @IBOutlet weak var markLabel: UILabel!
     @IBOutlet weak var modelLabel: UILabel!
@@ -34,6 +41,17 @@ class ViewController: UIViewController {
         
     }
     
+    private func insertDataFrom(selectedCar car: Car) {
+        guard let data = car.imageData else { return }
+        carImageView.image = UIImage(data: data)
+        markLabel.text = car.mark
+        modelLabel.text = car.model
+        myChoiceImageView.isHidden = !(car.myChoice)
+        ratingLabel.text = "Rating: \(car.rating) / 10"
+        numberOfTripsLabel.text = "Number of trips: \(car.timesDriven)"
+        guard let time = car.lastStarted else { return }
+        lastTimeStartedLabel.text = "Last time started: \(dateFormatter.string(from: time))"
+    }
     
     private func getDataFromFile() {
         let fetchRequest: NSFetchRequest<Car> = Car.fetchRequest()
@@ -86,6 +104,17 @@ class ViewController: UIViewController {
         
         getDataFromFile()
         
+        let fetchRequest: NSFetchRequest<Car> = Car.fetchRequest()
+        guard let mark = segmentedControl.titleForSegment(at: 0) else { return }
+        fetchRequest.predicate = NSPredicate(format: "mark == %@", mark)
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            guard let selectedCar = results.first else { return }
+            insertDataFrom(selectedCar: selectedCar)
+        } catch let error as NSError {
+            print (error.localizedDescription)
+        }        
     }
     
 }
